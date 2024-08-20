@@ -128,6 +128,24 @@ export function socketSetup(server: any): void {
       }
     });
 
+    socket.on('sendLiveMessage', (text: string, callback) => {
+      const user = getUser(socket.id);
+      if (user) {
+        const message = {
+          user: user.name,
+          text,
+          reactions: [],
+        };
+
+        io.to(user.room).emit('liveMessage', message);
+
+        // console.log(
+        //   `Message sent to room ${user.room} by ${user.name}: ${text}`
+        // );
+        callback?.();
+      }
+    });
+
     socket.on('sendReaction', ({ messageId, reaction }: Reaction, callback) => {
       const user = getUser(socket.id);
       if (user) {
