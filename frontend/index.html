@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Room</title>
+    <script
+      src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+      integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f1f1f1;
+      }
+
+      #chat {
+        max-width: 600px;
+        width: 100%;
+        margin: 20px;
+        padding: 20px;
+        border-radius: 10px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      #messages {
+        max-height: 300px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+      }
+
+      .message {
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        max-width: 80%;
+        word-wrap: break-word;
+      }
+
+      .message.user {
+        background-color: #d1e7dd;
+        align-self: flex-start;
+        margin-right: auto;
+        text-align: left;
+      }
+
+      .message.other {
+        background-color: #f8d7da;
+        align-self: flex-end;
+        margin-left: auto;
+        text-align: left;
+      }
+
+      input,
+      button {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+      }
+
+      button {
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      button:focus {
+        outline: 2px solid #0056b3;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="chat">
+      <p>To chat with the customer care bot, add @emBot to your message.</p>
+      <input
+        id="nameInput"
+        aria-label="Enter your name"
+        placeholder="Enter your name"
+      />
+      <input
+        id="roomInput"
+        aria-label="Enter room name"
+        placeholder="Enter room name"
+      />
+      <button id="joinBtn">Join Room</button>
+
+      <div id="messages" aria-live="polite"></div>
+
+      <input
+        id="messageInput"
+        aria-label="Type a message"
+        placeholder="Type a message"
+        disabled
+      />
+      <button id="sendBtn" disabled>Send</button>
+    </div>
+
+    <script>
+      const socket = io('http://localhost:5000');
+      let currentUser;
+
+      const joinBtn = document.getElementById('joinBtn');
+      const sendBtn = document.getElementById('sendBtn');
+      const messageInput = document.getElementById('messageInput');
+      const messagesContainer = document.getElementById('messages');
+
+      const addMessageToChat = (message, isCurrentUser) => {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add(
+          'message',
+          isCurrentUser ? 'user' : 'other'
+        );
+        messageElement.textContent = `${message.user}: ${message.text}`;
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight; // Auto-scroll to the latest message
+      };
+
+      const sendMessage = () => {
+        const message = messageInput.value.trim();
+        if (message) {
+          socket.emit('sendMessage', message, () => {
+            messageInput.value = '';
+          });
+        }
+      };
+
+      joinBtn.addEventListener('click', () => {
+        currentUser = document.getElementById('nameInput').value.trim();
+        const room = document.getElementById('roomInput').value.trim();
+
+        if (!currentUser || !room) {
+          alert('Both name and room are required to join!');
+          return;
+        }
+
+        socket.emit('join', { name: currentUser, room }, (error) => {
+          if (error) {
+            alert(error);
+          } else {
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            messageInput.focus(); // Set focus to message input after joining
+          }
+        });
+      });
+
+      sendBtn.addEventListener('click', sendMessage);
+
+      messageInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') sendMessage();
+      });
+
+      socket.on('message', (message) => {
+        addMessageToChat(message, message.user === currentUser);
+      });
+
+      socket.on('reaction', ({ messageId, user, reaction }) => {
+        console.log(`${user} reacted to message ${messageId}: ${reaction}`);
+      });
+    </script>
+  </body>
+</html>

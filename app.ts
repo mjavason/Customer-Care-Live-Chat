@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import morgan from 'morgan';
+import http from 'http';
+import { socketSetup } from './socket.config';
 
 //#region App Setup
 const app = express();
@@ -144,8 +146,10 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     .send({ success: false, status: 500, message: err.message });
 });
 
-app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+const server = http.createServer(app);
+socketSetup(server);
+server.listen(PORT, async () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
 // (for render services) Keep the API awake by pinging it periodically
