@@ -1,5 +1,6 @@
 try {
-  const socket = io('http://localhost:5000');
+  //   const socket = io('http://localhost:5000');
+  const socket = io('https://customer-care-live-chat.onrender.com');
   let currentUser;
 
   const titleHeader = document.getElementById('titleHeader');
