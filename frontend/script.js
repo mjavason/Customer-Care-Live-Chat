@@ -52,7 +52,6 @@ try {
     let messageLiveElement = document.getElementById(userId);
 
     if (messageLiveElement) {
-      console.log('Live element exists');
       // If the element exists, hide it
       messageLiveElement.remove();
     }
