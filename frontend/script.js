@@ -63,7 +63,7 @@ try {
     messagesContainer.appendChild(messageElement);
     messagesContainer.scrollTop = messagesContainer.scrollHeight; // Auto-scroll to the latest message
 
-    if (message.user !== 'admin') notificationSound.play();
+    if (message.user !== 'admin' && message.user !== currentUser) notificationSound.play();
   };
 
   const updateLiveMessage = (message, isCurrentUser) => {
