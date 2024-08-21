@@ -1,132 +1,155 @@
-const socket = io('http://localhost:5000');
-let currentUser;
+try {
+  const socket = io('http://localhost:5000');
+  let currentUser;
 
-const joinBtn = document.getElementById('joinBtn');
-const sendBtn = document.getElementById('sendBtn');
-const messageInput = document.getElementById('messageInput');
-const messagesContainer = document.getElementById('messages');
+  const titleHeader = document.getElementById('titleHeader');
+  const joinBtn = document.getElementById('joinBtn');
+  const sendBtn = document.getElementById('sendBtn');
+  const messageInput = document.getElementById('messageInput');
+  const messagesContainer = document.getElementById('messages');
+  const nameInput = document.getElementById('nameInput');
+  const roomInput = document.getElementById('roomInput');
+  const notificationSound = new Audio('notification.mp3');
 
-function debounce(fn, delay) {
-  let timeout;
-  return function (...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => fn(...args), delay);
-  };
-}
-
-const addMessageToChat = (message, isCurrentUser) => {
-  const userId = `user-${message.user}`;
-
-  // Check if an element with the ID already exists
-  let messageLiveElement = document.getElementById(userId);
-
-  if (messageLiveElement) {
-    console.log('Live element exists');
-    // If the element exists, hide it
-    messageLiveElement.remove();
+  function demoSetup() {
+    nameInput.value = Date.now();
+    roomInput.value = 'testing testing';
+    joinRoom();
   }
 
-  const messageElement = document.createElement('div');
-  messageElement.classList.add('message', isCurrentUser ? 'user' : 'other');
-  messageElement.textContent = `${message.user}: ${message.text}`;
-  messagesContainer.appendChild(messageElement);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight; // Auto-scroll to the latest message
-};
+  function debounce(fn, delay) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => fn(...args), delay);
+    };
+  }
 
-const updateLiveMessage = (message, isCurrentUser) => {
-  if (!isCurrentUser) {
-    // Generate the ID based on the user ID
+  function joinRoom() {
+    currentUser = nameInput.value.trim();
+    const room = roomInput.value.trim();
+
+    if (!currentUser || !room) {
+      alert('Both name and room are required to join!');
+      return;
+    }
+
+    socket.emit('join', { name: currentUser, room }, (error) => {
+      if (error) {
+        alert(error);
+      } else {
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        messageInput.focus(); // Set focus to message input after joining
+      }
+    });
+  }
+
+  const addMessageToChat = (message, isCurrentUser) => {
     const userId = `user-${message.user}`;
 
     // Check if an element with the ID already exists
     let messageLiveElement = document.getElementById(userId);
 
-    if (!messageLiveElement) {
-      // Create a new element
-      messageLiveElement = document.createElement('div');
-      messageLiveElement.id = userId;
-      messageLiveElement.className = 'typing';
-    }
-
-    if (message.text == '') {
+    if (messageLiveElement) {
+      console.log('Live element exists');
+      // If the element exists, hide it
       messageLiveElement.remove();
-      return;
     }
 
-    messageLiveElement.classList.add(
-      'message',
-      isCurrentUser ? 'user' : 'other'
-    );
-    messageLiveElement.textContent = `${message.user}(typing...): ${message.text}`;
-
-    messagesContainer.appendChild(messageLiveElement);
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message', isCurrentUser ? 'user' : 'other');
+    messageElement.textContent = `${message.user}: ${message.text}`;
+    messagesContainer.appendChild(messageElement);
     messagesContainer.scrollTop = messagesContainer.scrollHeight; // Auto-scroll to the latest message
-  }
-};
 
-const sendMessage = () => {
-  const message = messageInput.value.trim();
-  if (message) {
-    socket.emit('sendMessage', message, () => {
-      messageInput.value = '';
-    });
-  }
-};
+    if (message.user !== 'admin') notificationSound.play();
+  };
 
-const sendLiveMessage = () => {
-  const message = messageInput.value.trim();
-  socket.emit('sendLiveMessage', message, () => {
-  });
-  //   }
-};
+  const updateLiveMessage = (message, isCurrentUser) => {
+    if (!isCurrentUser) {
+      // Generate the ID based on the user ID
+      const userId = `user-${message.user}`;
 
-joinBtn.addEventListener('click', () => {
-  currentUser = document.getElementById('nameInput').value.trim();
-  const room = document.getElementById('roomInput').value.trim();
+      // Check if an element with the ID already exists
+      let messageLiveElement = document.getElementById(userId);
 
-  if (!currentUser || !room) {
-    alert('Both name and room are required to join!');
-    return;
-  }
+      if (!messageLiveElement) {
+        // Create a new element
+        messageLiveElement = document.createElement('div');
+        messageLiveElement.id = userId;
+        messageLiveElement.className = 'typing';
+      }
 
-  socket.emit('join', { name: currentUser, room }, (error) => {
-    if (error) {
-      alert(error);
-    } else {
-      messageInput.disabled = false;
-      sendBtn.disabled = false;
-      messageInput.focus(); // Set focus to message input after joining
+      if (message.text == '') {
+        messageLiveElement.remove();
+        return;
+      }
+
+      messageLiveElement.classList.add(
+        'message',
+        isCurrentUser ? 'user' : 'other'
+      );
+      messageLiveElement.textContent = `${message.user}(typing...): ${message.text}`;
+
+      messagesContainer.appendChild(messageLiveElement);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight; // Auto-scroll to the latest message
     }
+  };
+
+  const sendMessage = () => {
+    const message = messageInput.value.trim();
+    if (message) {
+      socket.emit('sendMessage', message, () => {
+        messageInput.value = '';
+      });
+    }
+  };
+
+  const sendLiveMessage = () => {
+    const message = messageInput.value.trim();
+    socket.emit('sendLiveMessage', message, () => {});
+    //   }
+  };
+
+  joinBtn.addEventListener('click', async () => {
+    joinRoom();
   });
-});
 
-sendBtn.addEventListener('click', sendMessage);
+  sendBtn.addEventListener('click', sendMessage);
 
-messageInput.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') sendMessage();
-});
+  messageInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') sendMessage();
+  });
 
-//Throttled - Best to use in production
-// messageInput.addEventListener(
-//   'input',
-//   debounce((event) => {
-//     sendLiveMessage();
-//   }, 300)
-// );
+  titleHeader.addEventListener('click', () => {
+    demoSetup();
+  });
 
-//No throttling
-messageInput.addEventListener('input', (event) => {
-  sendLiveMessage();
-});
+  //Throttled - Best to use in production
+  // messageInput.addEventListener(
+  //   'input',
+  //   debounce((event) => {
+  //     sendLiveMessage();
+  //   }, 300)
+  // );
 
-socket.on('message', (message) => {
-  addMessageToChat(message, message.user === currentUser);
-});
+  //No throttling
+  messageInput.addEventListener('input', (event) => {
+    sendLiveMessage();
+  });
 
-socket.on('liveMessage', (message) => {
-  updateLiveMessage(message, message.user === currentUser);
-});
+  socket.on('message', (message) => {
+    addMessageToChat(message, message.user === currentUser);
+  });
 
-socket.on('reaction', ({ messageId, user, reaction }) => {
-  console.log(`${user} reacted to message ${messageId}: ${reaction}`);
-});
+  socket.on('liveMessage', (message) => {
+    updateLiveMessage(message, message.user === currentUser);
+  });
+
+  socket.on('reaction', ({ messageId, user, reaction }) => {
+    console.log(`${user} reacted to message ${messageId}: ${reaction}`);
+  });
+} catch (e) {
+  alert(e.message);
+}

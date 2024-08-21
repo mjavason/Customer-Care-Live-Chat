@@ -90,7 +90,7 @@ export function socketSetup(server: any): void {
 
         socket.emit('message', {
           user: 'admin',
-          text: `${user.name}, welcome to room ${user.room}.`,
+          text: `${user.name}, welcome to ${user.room}.`,
         });
 
         socket.broadcast.to(user.room).emit('message', {
