@@ -34,7 +34,7 @@ const addUser = ({ id, name, room }: User): { user?: User; error?: string } => {
   const newUser = { id, name, room };
   users.push(newUser);
 
-  console.log(`User added: ${JSON.stringify(newUser)}`);
+  // console.log(`User added: ${JSON.stringify(newUser)}`);
   return { user: newUser };
 };
 
@@ -42,28 +42,28 @@ const removeUser = (id: string): User | undefined => {
   const index = users.findIndex((user) => user.id === id);
   if (index !== -1) {
     const [removedUser] = users.splice(index, 1);
-    console.log(`User removed: ${JSON.stringify(removedUser)}`);
+    // console.log(`User removed: ${JSON.stringify(removedUser)}`);
     return removedUser;
   }
-  console.log(`User with id "${id}" not found.`);
+  // console.log(`User with id "${id}" not found.`);
 };
 
 const getUser = (id: string): User | undefined => {
   const user = users.find((user) => user.id === id);
-  console.log(
-    `Fetching user with id "${id}": ${
-      user ? JSON.stringify(user) : 'not found'
-    }`
-  );
+  // console.log(
+  //   `Fetching user with id "${id}": ${
+  //     user ? JSON.stringify(user) : 'not found'
+  //   }`
+  // );
   return user;
 };
 
 const getUsersInRoom = (room: string): User[] => {
   room = room.trim();
   const usersInRoom = users.filter((user) => user.room === room);
-  console.log(
-    `Fetching users in room "${room}": ${JSON.stringify(usersInRoom)}`
-  );
+  // console.log(
+  //   `Fetching users in room "${room}": ${JSON.stringify(usersInRoom)}`
+  // );
   return usersInRoom;
 };
 //#endregion User Management Functions
@@ -139,9 +139,9 @@ export function socketSetup(server: any): void {
 
         io.to(user.room).emit('liveMessage', message);
 
-        // console.log(
-        //   `Message sent to room ${user.room} by ${user.name}: ${text}`
-        // );
+        console.log(
+          `Typing ${user.room} by ${user.name}: ${text}`
+        );
         callback?.();
       }
     });
@@ -161,9 +161,9 @@ export function socketSetup(server: any): void {
             reaction,
           });
 
-          console.log(
-            `Reaction "${reaction}" added to message "${messageId}" by ${user.name}`
-          );
+          // console.log(
+          //   `Reaction "${reaction}" added to message "${messageId}" by ${user.name}`
+          // );
         }
       }
 
